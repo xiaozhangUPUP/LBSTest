@@ -16,6 +16,8 @@ import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
+import com.baidu.mapapi.SDKInitializer;
+import com.baidu.mapapi.map.MapView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,15 +26,21 @@ public class MainActivity extends AppCompatActivity {
 
     public LocationClient locationClient;
     private TextView tv_position;
+    private MapView mapView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        tv_position = findViewById(R.id.tv_position);
 
         locationClient = new LocationClient(getApplicationContext());
         locationClient.registerLocationListener(new MyLocationListener());
+
+        SDKInitializer.initialize(getApplicationContext()); // ！！！！初始化一定要在setContentView() 之前
+
+        setContentView(R.layout.activity_main);
+        tv_position = findViewById(R.id.tv_position);
+        mapView = findViewById(R.id.mapview);
+
         List<String> permissionList = new ArrayList<>();
         if (ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -53,6 +61,25 @@ public class MainActivity extends AppCompatActivity {
         } else {
             requestLocation();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        locationClient.stop();
+        mapView.onDestroy();
     }
 
     private void requestLocation() {
