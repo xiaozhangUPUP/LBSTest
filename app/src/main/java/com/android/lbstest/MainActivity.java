@@ -17,7 +17,12 @@ import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.SDKInitializer;
+import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.MapStatusUpdate;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.model.LatLng;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     public LocationClient locationClient;
     private TextView tv_position;
     private MapView mapView;
+    private BaiduMap baiduMap;
+    private boolean isFirstLocate = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         tv_position = findViewById(R.id.tv_position);
         mapView = findViewById(R.id.mapview);
+        baiduMap = mapView.getMap();
+        baiduMap.setMyLocationEnabled(true); // 开启 让 “我” 显示在地图上 功能
 
         List<String> permissionList = new ArrayList<>();
         if (ContextCompat.checkSelfPermission(MainActivity.this,
@@ -80,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         locationClient.stop();
         mapView.onDestroy();
+        baiduMap.setMyLocationEnabled(false); // 关闭 让 “我” 显示在地图上 功能
     }
 
     private void requestLocation() {
@@ -94,6 +104,24 @@ public class MainActivity extends AppCompatActivity {
         option.setScanSpan(5000);
         option.setIsNeedAddress(true);
         locationClient.setLocOption(option);
+    }
+
+    private void navigateTo(BDLocation location) {
+        if (isFirstLocate) {
+            LatLng ll = new LatLng(location.getLatitude(), location.getLongitude());
+            MapStatusUpdate update = MapStatusUpdateFactory.newLatLng(ll);
+            baiduMap.animateMapStatus(update);
+            update = MapStatusUpdateFactory.zoomTo(16f); //精度 地图缩放级别 取值：3-19
+            baiduMap.animateMapStatus(update);
+            isFirstLocate = false;
+        }
+
+        // 让 “我” 显示在地图上
+        MyLocationData.Builder locationBuilder = new MyLocationData.Builder();
+        locationBuilder.latitude(location.getLatitude());
+        locationBuilder.longitude(location.getLongitude());
+        MyLocationData locationData = locationBuilder.build();
+        baiduMap.setMyLocationData(locationData);
     }
 
     @Override
@@ -140,6 +168,13 @@ public class MainActivity extends AppCompatActivity {
                 currentPosition.append("网络");
             }
             tv_position.setText(currentPosition);
+
+
+            // 地图
+            if (bdLocation.getLocType() == BDLocation.TypeGpsLocation
+                    || bdLocation.getLocType() == BDLocation.TypeNetWorkLocation) {
+                navigateTo(bdLocation);
+            }
         }
     }
 }
