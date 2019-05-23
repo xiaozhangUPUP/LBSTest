@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void navigateTo(BDLocation location) {
         if (isFirstLocate) {
+            // 让地图移动到当前位置
             LatLng ll = new LatLng(location.getLatitude(), location.getLongitude());
             MapStatusUpdate update = MapStatusUpdateFactory.newLatLng(ll);
             baiduMap.animateMapStatus(update);
